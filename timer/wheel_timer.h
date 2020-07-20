@@ -1,60 +1,63 @@
 #ifndef WHEEL_TIMER_H
 #define WHEEL_TIMER_H
 
-#include<stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <sys/time.h>
 
-const uint16_t MAX_TIMER_DAYS=356;
-typedef void(*timer_cb_t)(void*);
+//定义两级大小
+const uint16_t TVN_BITS = 6;
+const uint16_t TVR_BITS = 8;
+const uint32_t TVN_SIZE = 1 << TVN_BITS;
+const uint32_t TVR_SIZE = 1 << TVR_BITS;
+const uint32_t TVN_MASK = TVN_SIZE - 1;
+const uint32_t TVR_MASK = TVR_SIZE - 1;
+typedef void (*timer_cb_t)(void *);
 
-struct wheel_timer_node
+typedef struct LIST_TIMER
 {
-    uint32_t node_id;
-    uint32_t seconds;
-    uint32_t milliseconds;
-    uint32_t rotation;
-    struct timeval timeout_tv; //定时器过期的时间
-    struct timeval create_tv; //创建定时器的时间
-    void* data; //参数值
+    struct LIST_TIMER *next;
+    struct LIST_TIMER *prev;
+} LISTTIMER;
+
+typedef struct WHEEL_TIMER_NODE
+{
+    LISTTIMER listTImer; //双向链表
+    uint32_t timeout_tv; //定时器过期的时间
+    void *data;          //参数值
     timer_cb_t callback; //回调函数
-    struct wheel_timer_node* next;
-};
 
-typedef struct wheel_timer_node* timer_list_t;
+} TIMERNODE;
 
-class wheel_timer_manager
+class WHEEL_TIMER_MANAGER
 {
 public:
     void init();
-    void add_timer_node(void* data,timer_cb_t cb,uint32_t later_seconds,uint32_t later_milliseconds);
-    void delete_timer_node(wheel_timer_node* timer_node);
+    void add_timer_node(void *data, timer_cb_t cb, uint32_t later_seconds, uint32_t later_milliseconds);
+    void delete_timer_node(WHEEL_TIMER_NODE *timer_node);
     void show_timer_info();
     void deal_timeout();
-    wheel_timer_manager(/* args */);
-    ~wheel_timer_manager();
+    WHEEL_TIMER_MANAGER(/* args */);
+    ~WHEEL_TIMER_MANAGER();//析构函数这边需要删除整个时间管理器
+
 private:
-    //过期的任务链表
-    timer_list_t m_timeout_list; 
+    //仿照Linux实现五个级别的时间轮，表示更大的时间
+    LISTTIMER listTimer1[TVR_SIZE]; //一级时间轮，2^8=256毫秒
+    LISTTIMER listTimer2[TVN_SIZE]; //二级时间轮，256～256*64-1毫秒
+    LISTTIMER listtimer3[TVN_SIZE]; //三级时间轮，256*64 ~ 256*64*64-1
+    LISTTIMER listtimer4[TVN_SIZE]; //四级时间轮，256*64*64 ~ 256*64*64*64-1
+    LISTTIMER listtimer5[TVN_SIZE]; //五级时间轮，256*64*64*64 ~ 256*64*64*64*64-1
 
-    //毫秒、秒、分、小时、天（链表）
-    timer_list_t m_millisecond_timers[100];
-    timer_list_t m_second_timers[60];
-    timer_list_t m_minute_timers[60];
-    timer_list_t m_hour_timers[24];
-    timer_list_t m_day_timers[MAX_TIMER_DAYS];
-
-    uint32_t round;
+    uint32_t base_time; //基准时间
 };
 
-wheel_timer_manager::wheel_timer_manager(/* args */)
+WHEEL_TIMER_MANAGER::WHEEL_TIMER_MANAGER(/* args */)
 {
 }
 
-wheel_timer_manager::~wheel_timer_manager()
+WHEEL_TIMER_MANAGER::~WHEEL_TIMER_MANAGER()
 {
 }
-
 
 #endif
