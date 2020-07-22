@@ -23,7 +23,7 @@ typedef struct LIST_TIMER
 
 typedef struct WHEEL_TIMER_NODE
 {
-    LISTTIMER listTImer; //双向链表的头部
+    LISTTIMER* listTImer; //双向链表的头部
     uint32_t timeout_tv; //定时器过期的时间
     uint32_t period_tv;  //触发几次
     void *data;          //参数值
@@ -37,9 +37,9 @@ public:
     void InitListTimer(LISTTIMER *listtimer, uint32_t size);   //初始化一级时间轮
     void DeleteListTimer(LISTTIMER *listtimer, uint32_t size); //删除一级时间轮
     void ListTimerReplace(LISTTIMER *pOld, LISTTIMER *pNew);   //替换pOld
-    void AddTimerNode(TIMERNODE timer_node);
+    void AddTimerNode(TIMERNODE* timer_node);
     void CreateTimer(timer_cb_t callback, void *param, uint32_t DuringTime, uint32_t PeridTime);
-    void delete_timer_node(WHEEL_TIMER_NODE *timer_node);
+    void DeleteTimerNode(WHEEL_TIMER_NODE *timer_node);
     void show_timer_info();
     void deal_timeout();
     uint32_t GetBaseTimerOld();
