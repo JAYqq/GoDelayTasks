@@ -1,4 +1,5 @@
 #include "wheel_timer.h"
+#include<stddef.h>
 uint32_t WHEEL_TIMER_MANAGER::GetBaseTimerOld()
 {
     struct timeval tv;
@@ -113,7 +114,33 @@ void WHEEL_TIMER_MANAGER::AddTimerNode(TIMERNODE *timer_node)
         index = (time_out >> (TVR_BITS + 3 * TVN_BITS)) & TVN_MASK;
         pHead = &listTimer5[index];
     }
-    ListTimerInsertTail(&timer_node->listTImer, pHead); //尾插法插入
+    ListTimerInsertTail(timer_node->listTimer, pHead); //尾插法插入
+}
+uint32_t inline WHEEL_TIMER_MANAGER::GetIndex(uint32_t N){
+    return (base_time>>(TVR_BITS+N*TVN_BITS))&TVN_MASK;
+}
+bool inline WHEEL_TIMER_MANAGER::TimeGap(uint32_t from,uint32_t to){
+    return from-to>=0;
+}
+void WHEEL_TIMER_MANAGER::CancleTimerList(LISTTIMER* arrListTimer,uint32_t idx){
+    LISTTIMER *listTmr,*plistTmr;
+    TIMERNODE *pTmr;
+    ListTimerReplace(&arrListTimer[idx],listTmr); //把idx位置置换成listTmr
+    plistTmr=listTmr->next;
+    while(plistTmr!=listTmr){
+        pTmr=(TIMERNODE*)((uint8_t *)plistTmr-offsetof(TIMERNODE,listTimer));
+        plistTmr=plistTmr->next;
+        AddTimerNode(pTmr);
+    }
+}
+void WHEEL_TIMER_MANAGER::RunTimer(){
+    LISTTIMER *lpTmr;
+    uint32_t uJiffies=GetBaseTime();
+    mt.lock();
+    while(TimeGap(uJiffies,base_time)){
+        uint32_t idx=base_time&TVR_MASK;
+
+    }
 }
 WHEEL_TIMER_MANAGER::WHEEL_TIMER_MANAGER()
 {
@@ -150,7 +177,7 @@ void WHEEL_TIMER_MANAGER::DeleteTimerNode(TIMERNODE *pTmr)
 {
     if (pTmr == NULL)
         return;
-    LISTTIMER* lsTr = pTmr->listTImer;
+    LISTTIMER* lsTr = pTmr->listTimer;
     lsTr->prev->next=lsTr->next;
     lsTr->next->prev=lsTr->prev;
     free(pTmr);

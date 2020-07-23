@@ -5,7 +5,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <sys/time.h>
-
+#include <iostream>
+#include <thread>
+#include<mutex>
 //定义两级大小
 const uint16_t TVN_BITS = 6;
 const uint16_t TVR_BITS = 8;
@@ -19,15 +21,15 @@ typedef struct LIST_TIMER
 {
     struct LIST_TIMER *next;
     struct LIST_TIMER *prev;
-} LISTTIMER;
+} LISTTIMER; //双向循环链表
 
 typedef struct WHEEL_TIMER_NODE
 {
-    LISTTIMER* listTImer; //双向链表的头部
-    uint32_t timeout_tv; //定时器过期的时间
-    uint32_t period_tv;  //触发几次
-    void *data;          //参数值
-    timer_cb_t callback; //回调函数
+    LISTTIMER *listTimer; //双向链表的头部
+    uint32_t timeout_tv;  //定时器过期的时间
+    uint32_t period_tv;   //触发几次
+    void *data;           //参数值
+    timer_cb_t callback;  //回调函数
 
 } TIMERNODE;
 
@@ -37,11 +39,13 @@ public:
     void InitListTimer(LISTTIMER *listtimer, uint32_t size);   //初始化一级时间轮
     void DeleteListTimer(LISTTIMER *listtimer, uint32_t size); //删除一级时间轮
     void ListTimerReplace(LISTTIMER *pOld, LISTTIMER *pNew);   //替换pOld
-    void AddTimerNode(TIMERNODE* timer_node);
+    void AddTimerNode(TIMERNODE *timer_node);
     void CreateTimer(timer_cb_t callback, void *param, uint32_t DuringTime, uint32_t PeridTime);
     void DeleteTimerNode(WHEEL_TIMER_NODE *timer_node);
-    void show_timer_info();
-    void deal_timeout();
+    void RunTimer();
+    void CancleTimerList(LISTTIMER* arrListTimer,uint32_t idx);
+    bool inline TimeGap(uint32_t from,uint32_t to);
+    uint32_t inline GetIndex(uint32_t N);
     uint32_t GetBaseTimerOld();
     uint32_t GetBaseTime(); //获取基准时间
     void ListTimerInsert(LISTTIMER *pNew, LISTTIMER *pPrev, LISTTIMER *pNext);
@@ -59,6 +63,8 @@ private:
     LISTTIMER listTimer5[TVN_SIZE]; //五级时间轮，256*64*64*64 ~ 256*64*64*64*64-1
 
     uint32_t base_time; //基准时间
+    std::thread thread; //线程对象
+    std::mutex mt; //同步锁
 };
 
 WHEEL_TIMER_MANAGER::WHEEL_TIMER_MANAGER(/* args */)
