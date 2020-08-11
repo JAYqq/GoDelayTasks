@@ -30,6 +30,7 @@
 2. 时间精度太低
 
 #### 第三阶段   多级时间轮
+![](https://mmbiz.qpic.cn/mmbiz_jpg/XZMicpgcYibXF4Ozxf6iaibdVno9tfPTFgGUeDP19sjvmalkB4G9YSfhmbPfTV5pTAyDSdcIbKq0HdfiaNGzxGBQMnw/640?wx_fmt=jpeg&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1)
 
 和时间的表示一样，按照天、小时、分、秒、毫秒分为五个时间轮，这样可表示的跨度理论上到了一年（某天某小时某分钟某秒某毫秒），每个tick为一毫秒，同样每个时间槽都是双向循环链表。
 
